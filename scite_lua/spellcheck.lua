@@ -10,39 +10,64 @@
 -- * adding words to a user dictionary (can load with hunspell.add_dic())
 
 require("hunspell");  -- assuming hunspell.dll in SciTE folder
-hunspell.init("en_US.aff", "en_US.dic");  -- assuming .aff and .dic in SciTE folder 
+-- if spell.dictpath isn't set, we assume .aff and .dic in SciTE folder 
+dictpath = scite_GetProp("spell.dictpath", props["SciteDefaultHome"]);
+dictname = scite_GetProp("spell.dictname", "en_US");
+hunspell.init(dictpath.."\\"..dictname..".aff", dictpath.."\\"..dictname..".dic");  
 
 
--- Options
-local spell_ignoreCAPS = true;  -- ignore CamelCase, ALLCAPS?
+--- General options
+local spell_testword = "test";  -- set to false to skip check, otherwise, should be a valid word
 local spell_indic = 2;  -- indicator number for marking words (modern, not style byte type)
 
+--- Word extraction options
+local spell_ignoreCAPS = true;  -- ignore CamelCase, ALLCAPS?
 -- punctuation charachters; %p includes some chars we may not want...
 -- '+': strip any number of trailing punctuation chars
 local spell_pchars = "[%,%.%;%:%/%?%\'%\"%!]+";
-local spell_stripleading = true;  -- strip leading as well as trailing punctuation?
+local spell_leadingpchars = "[%\'%\"]+";  -- leading chars to strip (false for none)
 
 
--- style byte indicators (using INDICS_MASK, StartStyling, etc.) don't work
---  for some file types, HTML for example (conflict with syntax highlighter?)
-function Highlight_range(pos, len)
-  editor.IndicatorCurrent = spell_indic;
-  editor:IndicatorFillRange(pos, len);
+-- simple word extraction iterator: looks for runs of 
+--  letters separated by anything besides a letter
+function Get_words_simple(alltext)
+  local wstart, wstop, word = 0, 0, nil;
+  return function ()
+    while true do
+      wstart, wstop, word = string.find(alltext, "(%a+)", wstop+1);
+      if not wstart then 
+        return nil; 
+      elseif spell_ignoreCAPS and string.find(word, "%u", 2) then
+        --print("Ignoring "..word);
+      else  
+        return word, wstart;
+      end --if
+    end -- while
+  end -- function
 end
 
 
+-- more complicated word extraction: searches for runs of chars
+--  separated by whitespace (and a few other delims), then ignores
+--  them if they contain anything besides letters
+-- goal is to ignore URLs and code as much as possible; far from
+--  perfect, but seems to work reasonably well for LaTeX and markdown.  
 function Get_words(alltext)
   local wstart, wstop, word = 0, 0, nil;
   return function ()
     while true do
+      -- to do a better job of ignoring URLs, drop "%/" and "%-" here
+      -- add "%<%>" for better behavior with HTML
       wstart, wstop, word = string.find(alltext, "([^%s%-%(%)%/]+)", wstop+1);
       if not wstart then 
         return nil; 
       end
       -- strip trailing and, optionally, leading punctuation chars
       word = string.gsub(word, spell_pchars.."$", "");
-      if spell_stripleading then
-        word = string.gsub(word, "^"..spell_pchars, "");
+      if spell_leadingpchars then
+        local oldword = word;
+        word = string.gsub(oldword, "^"..spell_leadingpchars, "");
+        wstart = wstart + string.len(oldword) - string.len(word);
       end
       -- skip word if any remaining chars are not %a (or ')
       -- and optionally if word is CamelCase or ALL CAPS
@@ -58,12 +83,19 @@ function Get_words(alltext)
 end
 
 
+-- style byte indicators (using INDICS_MASK, StartStyling, etc.) don't work
+--  for some file types, HTML for example (conflict with syntax highlighter?)
+function Highlight_range(pos, len)
+  editor.IndicatorCurrent = spell_indic;
+  editor:IndicatorFillRange(pos, len);
+end
+
+
 -- treat spelling checking as a (per-buffer) toggable mode
--- Although messy, current code for skipping words seems to
---  work reasonably well for LaTeX and markdown.  Depending
---  on the setting of editor.WordChars (write-only, unfortunately)
---  there may be some disagreement between highlighted word and 
---  word used for generating suggestions (esp. w/ - and ')
+-- Need a big file for speed testing (1T3V.pdb = 4 - 5 sec, ignore caps)
+--  local spell_start_time = os.time();
+--  print("Spell check time:", os.time() - spell_start_time);
+
 function Inline_spell()
   if buffer["SpellMode"] then 
     -- clear indicator styling for whole file
@@ -71,9 +103,9 @@ function Inline_spell()
     editor:IndicatorClearRange(0, editor.TextLength);
     buffer["SpellMode"] = false;
     return;
-  elseif not hunspell.spell("test") then
+  elseif spell_testword and not hunspell.spell(spell_testword) then
     -- if dict path is wrong, spell() will return false for every word
-    print("Error: hunspell not initialized. Please check dictionary path.");
+    print("Error: hunspell not initialized. Dictionary files may be missing: "..dictpath.."\\"..dictname..".dic,.aff");
     return;
   end
   buffer["SpellMode"] = true;
@@ -81,41 +113,12 @@ function Inline_spell()
   -- in regions which haven't been displayed since document was opened
   editor:Colourise(1, -1);
   local alltext = editor:GetText();
-  --local wstart, wstop, word = 0, 0, nil;
-
-  local spell_start_time = os.time();
-
   for word, wstart in Get_words(alltext) do
+    --print("Checking: ", word);
     if not hunspell.spell(word) then
       Highlight_range(wstart-1, string.len(word));
     end
   end
-
---[==[
-  while true do 
-    -- to do a better job of ignoring URLs, drop "%/" and "%-" here
-    -- add "%<%>" for better behavior with HTML
-    wstart, wstop, word = string.find(alltext, "([^%s%-%(%)%/]+)", wstop+1);
-    if not wstart then break; end
-    -- strip trailing and, optionally, leading punctuation chars
-    word = string.gsub(word, spell_pchars.."$", "");
-    if spell_stripleading then
-      word = string.gsub(word, "^"..spell_pchars, "");
-    end
-    -- skip word if any remaining chars are not %a (or ')
-    -- and optionally if word is CamelCase or ALL CAPS
-    if string.find(word, "[^%a%']") 
-     or ( spell_ignoreCAPS and string.find(word, "%u", 2) ) then
-      --print("Ignoring "..word);
-      --continue;
-    elseif not hunspell.spell(word) then
-      Highlight_range(wstart-1, string.len(word));
-    end
-  end
---]==]
-
-  print("Spell check time:", os.time() - spell_start_time);
-
 end
 
 
