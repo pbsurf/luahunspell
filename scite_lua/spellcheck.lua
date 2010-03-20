@@ -6,7 +6,7 @@
 --  <http://code.google.com/p/scitelatexide>: myspellchecking.lua
 
 -- TODO:
--- * file type dependent word splitting; check only comments for code
+-- * file type dependent word splitting; checking only comments for code
 -- * adding words to a user dictionary (can load with hunspell.add_dic())
 
 require("hunspell");  -- assuming hunspell.dll in SciTE folder
@@ -15,14 +15,17 @@ dictpath = scite_GetProp("spell.dictpath", props["SciteDefaultHome"]);
 dictname = scite_GetProp("spell.dictname", "en_US");
 hunspell.init(dictpath.."\\"..dictname..".aff", dictpath.."\\"..dictname..".dic");  
 
+-- set locale
+--os.setlocale("Russian");
+--print(os.setlocale());  -- print new locale
 
 --- General options
-local spell_testword = "test";  -- set to false to skip check, otherwise, should be a valid word
+local spell_testword = false;  -- set to false to skip check, otherwise, should be a valid word
 local spell_indic = 2;  -- indicator number for marking words (modern, not style byte type)
 
 --- Word extraction options
 local spell_ignoreCAPS = true;  -- ignore CamelCase, ALLCAPS?
--- punctuation charachters; %p includes some chars we may not want...
+-- punctuation characters; %p includes some chars we may not want...
 -- '+': strip any number of trailing punctuation chars
 local spell_pchars = "[%,%.%;%:%/%?%\'%\"%!]+";
 local spell_leadingpchars = "[%\'%\"]+";  -- leading chars to strip (false for none)

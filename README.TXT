@@ -16,7 +16,7 @@ Installing SciTE ExtMan under Windows:
 1. Obtain extman.lua and spawner-ex.dll from scite-debug (http://scitedebug.luaforge.net/) and copy to SciTE folder.  The version of extman.lua from the the lua-users wiki may not work, at least on Vista.
 2. In SciTE properties file (i.e., SciTEGlobal.properties or SciTEUser.properties), add the following:
     ext.lua.startup.script=$(SciteDefaultHome)\extman.lua 
-Must use a backslash ('\') here for scite-debug ExtMan or scite_lua folder won't be found (strangely, '/' does work for some other verisions of ExtMan).
+Must use a backslash ('\') here for scite-debug ExtMan or scite_lua folder won't be found (strangely, '/' does work for some other versions of ExtMan).
 3. Create scite_lua subfolder in SciTE folder.  Place lua scripts (e.g. spellcheck.lua) here.
 
 
