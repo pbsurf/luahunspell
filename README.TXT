@@ -7,8 +7,14 @@ Using with SciTE:
 
 1. Copy hunspell.dll to SciTE folder (e.g., C:\Program Files\wscite).
 2. Extract scite_lua\spellcheck.lua to scite_lua folder (assumes SciTE ExtMan is in use).
-3. spellcheck.lua assumes en_US dictionary files (.aff, .dic) are located in SciTE folder.  Otherwise, set the 'spell.dictpath' and/or 'spell.dictname' properties in SciTEGlobal.properties or SciTEUser.properties.  Dictionaries files available at http://hunspell.sourceforge.net/.
+3. spellcheck.lua assumes en_US dictionary files (.aff, .dic) are located in $(SciteDefaultHome) (usually the install folder).  Otherwise, set the 'spell.dictpath' and/or 'spell.dictname' properties in SciTEGlobal.properties or SciTEUser.properties (see example below).  Dictionaries files available at http://hunspell.sourceforge.net/.
 4. Tools->Toggle Spelling (F9) checks the document and underlines misspelled words; a second time turns off underlining.  Double-click on a word to see suggestions.  Double-click suggestion to make replacement.  The keyboard shortcut can be changed in spellcheck.lua.  Spell checking must be turned off and back on to refresh. 
+
+
+# Usage example for spell.dictname, dictpath
+spell.dictpath=$(SciteDefaultHome)\dict
+# do not include file extension
+spell.dictname=en_US
 
 Installing SciTE ExtMan under Windows: 
 - Ignore this if you already have ExtMan working.
@@ -16,7 +22,7 @@ Installing SciTE ExtMan under Windows:
 1. Obtain extman.lua and spawner-ex.dll from scite-debug (http://scitedebug.luaforge.net/) and copy to SciTE folder.  The version of extman.lua from the the lua-users wiki may not work, at least on Vista.
 2. In SciTE properties file (i.e., SciTEGlobal.properties or SciTEUser.properties), add the following:
     ext.lua.startup.script=$(SciteDefaultHome)\extman.lua 
-Must use a backslash ('\') here for scite-debug ExtMan or scite_lua folder won't be found (strangely, '/' does work for some other versions of ExtMan).
+Must use a backslash ('\') here or scite_lua folder won't be found (strangely, '/' does work for some other versions of ExtMan).
 3. Create scite_lua subfolder in SciTE folder.  Place lua scripts (e.g. spellcheck.lua) here.
 
 
