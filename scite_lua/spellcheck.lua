@@ -9,11 +9,18 @@
 -- * file type dependent word splitting; checking only comments for code
 -- * adding words to a user dictionary (can load with hunspell.add_dic())
 
+-- on Windows, DLL should just be placed in same folder as scite.exe; this is
+--  less practical on linux, so also look for shared lib in scite home (/usr/share/scite)
+local default_dictpath = props["SciteDefaultHome"].."\\";  -- assuming windows
+if(string.match(package.cpath, ".so")) then
+  package.cpath = package.cpath..";"..props["SciteDefaultHome"].."/?.so";
+  default_dictpath = "/usr/share/hunspell/"  -- assuming hunspell dict package installed
+end
 require("hunspell");  -- assuming hunspell.dll in SciTE folder
--- if spell.dictpath isn't set, we assume .aff and .dic in SciTE folder 
-dictpath = scite_GetProp("spell.dictpath", props["SciteDefaultHome"]);
-dictname = scite_GetProp("spell.dictname", "en_US");
-hunspell.init(dictpath.."\\"..dictname..".aff", dictpath.."\\"..dictname..".dic");  
+-- if spell.dictpath isn't set, we assume .aff and .dic in SciTE folder
+local dictpath = scite_GetProp("spell.dictpath", default_dictpath);
+local dictname = scite_GetProp("spell.dictname", "en_US");
+hunspell.init(dictpath..dictname..".aff", dictpath..dictname..".dic");
 
 -- set locale
 --os.setlocale("Russian");
@@ -31,18 +38,18 @@ local spell_pchars = "[%,%.%;%:%/%?%\'%\"%!]+";
 local spell_leadingpchars = "[%\'%\"]+";  -- leading chars to strip (false for none)
 
 
--- simple word extraction iterator: looks for runs of 
+-- simple word extraction iterator: looks for runs of
 --  letters separated by anything besides a letter
 function Get_words_simple(alltext)
   local wstart, wstop, word = 0, 0, nil;
   return function ()
     while true do
       wstart, wstop, word = string.find(alltext, "(%a+)", wstop+1);
-      if not wstart then 
-        return nil; 
+      if not wstart then
+        return nil;
       elseif spell_ignoreCAPS and string.find(word, "%u", 2) then
         --print("Ignoring "..word);
-      else  
+      else
         return word, wstart;
       end --if
     end -- while
@@ -54,7 +61,7 @@ end
 --  separated by whitespace (and a few other delims), then ignores
 --  them if they contain anything besides letters
 -- goal is to ignore URLs and code as much as possible; far from
---  perfect, but seems to work reasonably well for LaTeX and markdown.  
+--  perfect, but seems to work reasonably well for LaTeX and markdown.
 function Get_words(alltext)
   local wstart, wstop, word = 0, 0, nil;
   return function ()
@@ -62,8 +69,8 @@ function Get_words(alltext)
       -- to do a better job of ignoring URLs, drop "%/" and "%-" here
       -- add "%<%>" for better behavior with HTML
       wstart, wstop, word = string.find(alltext, "([^%s%-%(%)%/]+)", wstop+1);
-      if not wstart then 
-        return nil; 
+      if not wstart then
+        return nil;
       end
       -- strip trailing and, optionally, leading punctuation chars
       word = string.gsub(word, spell_pchars.."$", "");
@@ -74,11 +81,11 @@ function Get_words(alltext)
       end
       -- skip word if any remaining chars are not %a (or ')
       -- and optionally if word is CamelCase or ALL CAPS
-      if string.find(word, "[^%a%']") 
+      if string.find(word, "[^%a%']")
        or ( spell_ignoreCAPS and string.find(word, "%u", 2) ) then
         --print("Ignoring "..word);
         --continue;
-      else  
+      else
         return word, wstart;
       end --if
     end -- while
@@ -100,7 +107,7 @@ end
 --  print("Spell check time:", os.time() - spell_start_time);
 
 function Inline_spell()
-  if buffer["SpellMode"] then 
+  if buffer["SpellMode"] then
     -- clear indicator styling for whole file
     editor.IndicatorCurrent = spell_indic;
     editor:IndicatorClearRange(0, editor.TextLength);
@@ -112,7 +119,7 @@ function Inline_spell()
     return;
   end
   buffer["SpellMode"] = true;
-  -- without this call to Colourise, syntax highlighting will be broken 
+  -- without this call to Colourise, syntax highlighting will be broken
   -- in regions which haven't been displayed since document was opened
   editor:Colourise(1, -1);
   local alltext = editor:GetText();
@@ -140,7 +147,7 @@ end
 
 function Spell_suggest()
   if not buffer["SpellMode"] or editor:AutoCActive() then return false; end
-  
+
   -- normally, autocomplete list will be hidden if word is not prefix
   --  of (any? all?) item on list.
   editor.AutoCAutoHide = false;
@@ -150,14 +157,14 @@ function Spell_suggest()
   local word = editor:textrange(startPos, endPos);
   --print("Checking word "..word);
   if editor:IndicatorValueAt(spell_indic, pos-1) ~= 0 and not hunspell.spell(word) then
-    -- selection determines what will be replaced by suggestion 
+    -- selection determines what will be replaced by suggestion
     editor:SetSel(startPos, endPos);
     local sug = hunspell.suggest(word);
     if #sug > 0 then
       editor:AutoCShow(string.len(word), table.concat(sug, " "));
     end
   end
-  -- suppress other handlers in spell check mode; This 
+  -- suppress other handlers in spell check mode; This
   --  only works for handlers added after this one!
   return true;
 end
@@ -170,7 +177,7 @@ scite_Command("Toggle Spelling|Inline_spell|F9");
 scite_Command("Spell Suggestions|Spell_suggest|Shift+F9");
 
 
-function close_hunspell() 
+function close_hunspell()
   --print("Closing Hunspell");
   hunspell.close();
 end
