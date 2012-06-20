@@ -27,7 +27,7 @@
 // Building for linux:
 //  sudo aptitude install liblua5.1-dev libhunspell-dev
 //  g++ -I /usr/include/hunspell/ -I /usr/include/lua5.1/ -shared
-//    -lhunspell -o luahunspell.so luahunspell.cpp
+//    -lhunspell -o hunspell.so luahunspell.cpp
 // The linux version uses the libhunspell shared system library, whereas the
 //  windows version includes hunspell in the DLL
 
