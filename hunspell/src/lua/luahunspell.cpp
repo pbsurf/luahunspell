@@ -26,8 +26,7 @@
 
 // Building for linux:
 //  sudo aptitude install liblua5.1-dev libhunspell-dev
-//  g++ -I /usr/include/hunspell/ -I /usr/include/lua5.1/ -shared
-//    -lhunspell -o hunspell.so luahunspell.cpp
+//  g++ -I /usr/include/hunspell/ -I /usr/include/lua5.1/ -fPIC -shared -lhunspell -o hunspell.so luahunspell.cpp
 // The linux version uses the libhunspell shared system library, whereas the
 //  windows version includes hunspell in the DLL
 
@@ -101,7 +100,7 @@ static int l_suggest(lua_State *L)
   return 1;  // number of results
 }
 
-static const struct luaL_reg luafns[] =
+static const struct luaL_Reg luafns[] =
 {
   {"init", l_init},
   {"add_dic", l_add_dic},
@@ -120,6 +119,11 @@ extern "C"
 
 int luaopen_hunspell(lua_State *L)
 {
+#if LUA_VERSION_NUM < 502
   luaL_register(L, "hunspell", luafns);
+#else
+  luaL_newlib(L, luafns);
+  lua_setglobal(L, "hunspell");
+#endif
   return 1;
 }
