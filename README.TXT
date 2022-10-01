@@ -1,10 +1,10 @@
-LuaHunspell - Matt White (pbsurf at gmail.com)
+LuaHunspell
 19 March 2010
-updated 19 June 2012
+updated 20 Aug 2020
 
 Installing for use with SciTE on Linux:
 
-1. Install hunspell library and desired dictionaries (e.g., aptitude install libhunspell-1.3.0 hunspell-en-us)
+1. Install hunspell library and desired dictionaries (e.g., apt install libhunspell-1.3.0 hunspell-en-us)
 2. Copy hunspell.so to SciteDefaultHome (usually /usr/share/scite).  See instructions in luahunspell.cpp for building from source.
 3. Extract scite_lua\spellcheck.lua to scite_lua folder (assumes SciTE ExtMan is in use)
 
@@ -25,12 +25,12 @@ spell.dictpath=$(SciteDefaultHome)\dict
 # do not include file extension
 spell.dictname=en_US
 
-Installing SciTE ExtMan under Windows: 
+Installing SciTE ExtMan under Windows:
 - Ignore this if you already have ExtMan working.
 
 1. Obtain extman.lua and spawner-ex.dll from scite-debug (http://scitedebug.luaforge.net/) and copy to SciTE folder.  The version of extman.lua from the the lua-users wiki may not work, at least on Vista.
 2. In SciTE properties file (i.e., SciTEGlobal.properties or SciTEUser.properties), add the following:
-    ext.lua.startup.script=$(SciteDefaultHome)\extman.lua 
+    ext.lua.startup.script=$(SciteDefaultHome)\extman.lua
 Must use a backslash ('\') here or scite_lua folder won't be found (strangely, '/' does work for some other versions of ExtMan).
 3. Create scite_lua subfolder in SciTE folder.  Place lua scripts (e.g. spellcheck.lua) here.
 
@@ -61,3 +61,7 @@ spellcheck.lua changes:
 - added a tools menu command to show suggestions without double-clicking
 0.1b - 2010/03/11: 
 - initial version
+
+
+Related projects:
+* Orthospell: https://groups.google.com/g/scite-interest/c/Eu8D7E5yqrE
